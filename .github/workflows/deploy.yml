@@ -1,0 +1,30 @@
+name: Deploy to GX10
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Connect to Tailscale
+        uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          audience: ${{ secrets.TS_AUDIENCE }}
+          tags: tag:ci
+          ping: 100.108.134.59
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: 100.108.134.59
+          username: andrey
+          key: ${{ secrets.GX10_SSH_KEY }}
+          script: |
+            cd ~/claude-code-lab
+            git pull
+            echo "Deployed commit $(git rev-parse --short HEAD) at $(date)" > deploy-marker.txt
